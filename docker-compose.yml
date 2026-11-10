@@ -1,0 +1,52 @@
+services:
+  app:
+    build: .
+    container_name: roofing-lead-pilot-app
+    ports:
+      - "8133:8000"
+    environment:
+      APP_NAME: RoofingLeadPilot
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8133
+      APP_KEY: "base64:AOWCrCtK3NvEg/gQuW56Ouek8+doi+KmsPruGmojkVY="
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: roofing_lead_pilot
+      DB_USERNAME: rlp
+      DB_PASSWORD: secret
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      SESSION_DRIVER: database
+    volumes:
+      - ./storage:/var/www/html/storage
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+    mem_limit: 768m
+
+  mysql:
+    image: mysql:8.4
+    container_name: roofing-lead-pilot-mysql
+    environment:
+      MYSQL_DATABASE: roofing_lead_pilot
+      MYSQL_USER: rlp
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: rootsecret
+    ports:
+      - "33096:3306"
+    volumes:
+      - rlp_mysql_data:/var/lib/mysql
+    command: ["mysqld", "--innodb-buffer-pool-size=128M", "--performance-schema=OFF"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-prootsecret"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+    mem_limit: 512m
+
+volumes:
+  rlp_mysql_data:
